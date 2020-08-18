@@ -1,13 +1,40 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useState, useRef, useEffect, useCallback} from 'react';
 
-import ReactPlayer from 'react-player';
+import useEventListener from '../hooks/useEventListener';
 
 const audioUrl = "https://traffic.libsyn.com/atpfm/atp391.mp3"
+
+const audioList = [
+  {
+    title: 'First Track',
+    track: 'https://traffic.libsyn.com/atpfm/atp391.mp3'
+  },
+  {
+    title: 'Second Track',
+    track: 'https://traffic.libsyn.com/atpfm/atp390.mp3'
+  },
+  {
+    title: 'Third Track',
+    track: 'https://traffic.libsyn.com/atpfm/atp389.mp3'
+  }
+]
+
+
 
 export default function Player(){
   const mediaRef = useRef()
   const [play, setPlay] = useState(false)
   const [audio, setAudio] = useState(null)
+  const [currentTrack, setCurrentTrack] = useState(audioList[0].track)
+  const [currentTitle, setCurrentTitle] = useState(audioList[0].title)
+
+  const audioFinishedHandler = useCallback(() => {
+    console.log('Media finished playing');
+  }, [])
+
+
+  useEventListener('ended', audioFinishedHandler, mediaRef.current);
+
   useEffect(() => {
     console.log(mediaRef.current)
     const audioContext = new AudioContext();
@@ -15,11 +42,19 @@ export default function Player(){
     const track = audioContext.createMediaElementSource(mediaRef.current)
     track.connect(audioContext.destination)
 
-    mediaRef.current.addEventListener('ended', () => {
-      console.log('Media finished playing!')
-    }, false)
-    
-  }, [])
+    return async () => {
+      try {
+        await audioContext.close()
+        console.log("AUDIO CONTEXT CLOSED")
+      } catch (error) {
+        console.log('could not close audioContext')
+        console.error(error)
+      }
+      
+      
+    }
+  }, [mediaRef])
+
 
   function handleClick() {
     console.log(mediaRef.current.state)
@@ -40,8 +75,9 @@ export default function Player(){
 
   return (
     <>
+      <h1>Playing: {currentTitle}</h1>
       <audio controls ref={mediaRef} crossOrigin="anonymous">
-          <source src="https://traffic.libsyn.com/atpfm/atp390.mp3" type="audio/mp3"/> 
+          <source src={currentTrack} type="audio/mp3"/> 
       </audio>
       <button type="button" onClick={handleClick}>
         Play/Pause
