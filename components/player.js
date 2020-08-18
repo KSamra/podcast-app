@@ -1,10 +1,58 @@
+import React, {useState, useRef, useEffect} from 'react';
+
 import ReactPlayer from 'react-player';
 
 const audioUrl = "https://traffic.libsyn.com/atpfm/atp391.mp3"
 
 export default function Player(){
+  const mediaRef = useRef()
+  const [play, setPlay] = useState(false)
+  const [audio, setAudio] = useState(null)
+  useEffect(() => {
+    console.log(mediaRef.current)
+    const audioContext = new AudioContext();
+    setAudio(audioContext)
+    const track = audioContext.createMediaElementSource(mediaRef.current)
+    track.connect(audioContext.destination)
+
+    mediaRef.current.addEventListener('ended', () => {
+      console.log('Media finished playing!')
+    }, false)
+    
+  }, [])
+
+  function handleClick() {
+    console.log(mediaRef.current.state)
+    console.log(audio)
+    if(audio.state === 'suspended'){
+      audio.resume()
+    }
+
+    if(play === false){
+      setPlay(true)
+      mediaRef.current.play()
+      return
+    }
+    setPlay(false)
+    mediaRef.current.pause()
+    return
+  }
 
   return (
-    <ReactPlayer url={audioUrl} height="50px" controls={true}/>
+    <>
+      <audio controls ref={mediaRef} crossOrigin="anonymous">
+          <source src="https://traffic.libsyn.com/atpfm/atp390.mp3" type="audio/mp3"/> 
+      </audio>
+      <button type="button" onClick={handleClick}>
+        Play/Pause
+      </button>
+    </>
+    
   )
+  
 };
+
+
+// return (
+//   <ReactPlayer url={audioUrl} height="50px" controls={true}/>
+// )
