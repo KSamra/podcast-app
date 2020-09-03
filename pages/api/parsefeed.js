@@ -16,7 +16,7 @@ const jsonTransformer = new Transform({
       let episode = chunk['itunes:episode']
       let pod = {title, author, date, enclosures, link, origlink, episode}
       let j = JSON.stringify(pod);
-      console.log(j)
+      // console.log(j)
       this.push(j)
       callback();
 
@@ -26,6 +26,7 @@ const jsonTransformer = new Transform({
     }
   }
 })
+
 
 export default async function handler(req, res) {
   console.log(req.body)
@@ -51,6 +52,24 @@ export default async function handler(req, res) {
   //     feedparser.write(pod)
   //   }
   // })
+  // jsonTransformer.on('data', () => {
+  //   let stream = this;
+  //   let item;
+  //   console.log('transformer has received some data')
+  //   let data = this.read();
+  //   console.log('transformer data: ', data)
+  //   // while(item = stream.read()){
+  //   //   console.log('in transformer: ')
+  //   //   console.log(item)
+  //   //   res.write(item);
+  //   // }
+    
+  // })
 
+  jsonTransformer.on('error', () => {
+    res.end()
+  })
   request.body.pipe(feedparser).pipe(jsonTransformer).pipe(res);
+
+
 }
