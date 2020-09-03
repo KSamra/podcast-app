@@ -27,6 +27,10 @@ const jsonTransformer = new Transform({
   }
 })
 
+jsonTransformer.on('error', () => {
+  res.end()
+});
+
 
 export default async function handler(req, res) {
   console.log(req.body)
@@ -66,9 +70,7 @@ export default async function handler(req, res) {
     
   // })
 
-  jsonTransformer.on('error', () => {
-    res.end()
-  })
+  
   request.body.pipe(feedparser).pipe(jsonTransformer).pipe(res);
 
 
