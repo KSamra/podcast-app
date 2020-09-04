@@ -2,12 +2,12 @@
 const FeedParser = require('feedparser');
 const fetch = require('node-fetch');
 const { Transform } = require('stream');
+const jsonStream = require('JSONStream');
 
 const jsonTransformer = new Transform({
   writableObjectMode: true,
   transform(chunk, encoding, callback) {
     try {
-
       if(chunk === null){
         this.push(null);
       }
@@ -28,9 +28,47 @@ const jsonTransformer = new Transform({
 })
 
 jsonTransformer.on('error', () => {
+  console.log('JsonTransformer errored or finished!')
   res.end()
 });
 
+const jsonOutStream = jsonStream.stringifyObject();
+
+jsonOutStream.on('readable', (chunk) => {
+  console.log('received data');
+  console.log(chunk)
+  for (const key in object) {
+    jsonOutStream.write([key, chunk[key]]);
+  }
+})
+
+jsonOutStream.on('error', (chunk) => {
+  console.log('Json stream finished or errored');
+  // jsonOutStream.end()
+  res.end()
+})
+
+const filterTransformer = new Transform({
+  writableObjectMode: true,
+  readableObjectMode: true,
+  transform(chunk, encoding, callback){
+    try {
+
+      if(chunk === null){
+        this.push(null);
+      }
+      let {title, enclosures, author, date, link, origlink} = chunk
+      let episode = chunk['itunes:episode']
+      let pod = {title, author, date, enclosures, link, origlink, episode}
+      this.push(pod);
+      callback();
+    } catch (error) {
+      callback(error);
+      this.push(null);
+    }
+    
+  }
+})
 
 export default async function handler(req, res) {
   console.log(req.body)
@@ -71,7 +109,8 @@ export default async function handler(req, res) {
   // })
 
   
+  
   request.body.pipe(feedparser).pipe(jsonTransformer).pipe(res);
-
+  // request.body.pipe(feedparser).pipe(filterTransformer).pipe(jsonOutStream).pipe(res)
 
 }
