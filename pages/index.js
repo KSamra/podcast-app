@@ -1,7 +1,8 @@
 import Nav from '../components/nav'
 import Player from '../components/player';
+import fetch from 'node-fetch';
 
-export default function IndexPage() {
+export default function IndexPage({data}) {
   return (
     <div>
       <Nav />
@@ -10,7 +11,27 @@ export default function IndexPage() {
           Next.js + Tailwind CSS
         </h1>
         <Player/>
+        <div>
+          {data}
+        </div>
+        
       </div>
     </div>
   )
+}
+
+export async function getServerSideProps(){
+  const res = await fetch(`http://localhost:3000/api/parsefeed/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: "https://mcsorleys.barstoolsports.com/feed/call-her-daddy"
+  })
+
+  console.log(res)
+
+  return {
+    props: {data: 'some data'}
+  }
 }
