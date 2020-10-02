@@ -1,8 +1,8 @@
 
 const FeedParser = require('feedparser');
 const fetch = require('node-fetch');
-const { Transform } = require('stream');
-
+const { Transform, pipeline } = require('stream');
+const url = require('url');
 
 const jsonTransformer = new Transform({
   writableObjectMode: true,
@@ -14,7 +14,8 @@ const jsonTransformer = new Transform({
 
       let {title, enclosures, author, date, link, origlink} = chunk
       let episode = chunk['itunes:episode']
-      let pod = JSON.stringify({title, author, date, enclosures, link, origlink, episode})
+      // let pod = JSON.stringify({title, author, date, enclosures, link, origlink, episode})
+      let pod = JSON.stringify({title, enclosures, date}) + '\n';
       this.push(pod)
       callback();
 
@@ -27,7 +28,8 @@ const jsonTransformer = new Transform({
 
 jsonTransformer.on('error', () => {
   console.log('JsonTransformer errored or finished!')
-  res.end();
+  // res.statusCode = 500;
+  // res.end();
 });
 
 jsonTransformer.on('finish', () => {
@@ -36,17 +38,32 @@ jsonTransformer.on('finish', () => {
 
 
 export default async function handler(req, res) {
-  console.log(req.body)
-  let {headers, method, url, body} = req;
-  console.log(method)
-  console.log(headers);
-  
-  let {feedUrl} = req.body;
-  const request = await fetch(feedUrl);
   
   
+  const queryObj = url.parse(req.url, true).query.url.toString();
+  // console.log(queryObj);
 
+  // let {feedUrl} = queryObj;
+  const request = await fetch(queryObj);
   const feedparser = new FeedParser();
-  res.status(200)
-  request.body.pipe(feedparser).pipe(jsonTransformer).pipe(res);
+
+
+  // res.writeHead(200, {'Content-Type': 'application/json'})
+  res.setHeader('Content-Type', 'application/json')
+
+  res.on('finish', () => {
+    console.log(res.writableFinished)
+  })
+
+  pipeline(
+    request.body,
+    feedparser,
+    jsonTransformer,
+    res, (error) => {
+      if (error) {
+        console.error(error);
+        res.end({message: error})
+      }
+    })
+
 }
