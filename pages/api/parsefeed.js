@@ -1,3 +1,4 @@
+import { getQueryParser } from 'next/dist/next-server/server/api-utils';
 
 const FeedParser = require('feedparser');
 const fetch = require('node-fetch');
@@ -39,11 +40,10 @@ jsonTransformer.on('finish', () => {
 
 export default async function handler(req, res) {
   
-  
-  const queryObj = url.parse(req.url, true).query.url.toString();
-  // console.log(queryObj);
+  const queryObj = req.body.url;
+  // let queryObj = url.parse(req.url, true).query.url.toString();
+  console.log('request feed for: ', queryObj);
 
-  // let {feedUrl} = queryObj;
   const request = await fetch(queryObj);
   const feedparser = new FeedParser();
 
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
     jsonTransformer,
     res, (error) => {
       if (error) {
-        console.error(error);
+        // console.error(error);
         res.end({message: error})
       }
     })

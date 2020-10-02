@@ -2,16 +2,22 @@ import Nav from '../components/nav'
 import Player from '../components/player';
 // import fetch from 'node-fetch';
 import axios from 'axios';
+import {useState, useEffect} from 'react';
 // import fs from 'fs';
 
-export default function IndexPage({data, podcasts}) {
+export default function IndexPage({data, podcasts, podcastTitle}) {
   
-  let arr = podcasts.split('\n');
 
-  arr.pop()
-  let obj = arr.map(elem => JSON.parse(elem));
-  console.log(obj);
+  let [podcastList, setPodcastList] = useState(null);
  
+  useEffect(() => {
+    let arr = podcasts.split('\n');
+
+    arr.pop()
+    let obj = arr.map(elem => JSON.parse(elem));
+    console.log(obj);
+    setPodcastList(obj);
+  }, [podcasts, podcastTitle])
   
   return (
     <div>
@@ -26,7 +32,7 @@ export default function IndexPage({data, podcasts}) {
         </div>
 
         <ul>
-         <li>{obj[1].title}</li>
+         {podcastList ? podcastList[0].title : null}
         </ul>
         
       </div>
@@ -35,48 +41,20 @@ export default function IndexPage({data, podcasts}) {
 }
 
 export async function getServerSideProps() {
-
-  let podcastList = []
-
-  // const res = await fetch(`http://localhost:3000/api/parsefeed?url=https://mcsorleys.barstoolsports.com/feed/call-her-daddy`, {
-  //   method: 'GET',
-  // })
-  // console.log(res);
-  // try {
-  //   // let content = await res.text();
-  //   // console.log(content)
-
-  //   return {
-  //     props: {data: 'some data'}
-  //   }
-  // } catch (error) {
-  //   console.log(error);
-  //   return {
-  //     props: {}
-  //   }
-  // }
-
+  const host = 'http://localhost:3000'
   
-
   try {
-    const response = await axios.get('http://localhost:3000/api/parsefeed?url=https://atp.fm/rss');
-    // const response = await axios({
-    //   method: 'GET',
-    //   url: 'http://localhost:3000/api/parsefeed?url=https://mcsorleys.barstoolsports.com/feed/call-her-daddy',
-    //   responseType: 'stream',
-    // })
-    // // response.data.pipe(fs.createWriteStream('response.json'))
-    // const stream = response.data;
-    // stream.on('data', (chunk) => {
-    //   console.log(typeof chunk)
-    //   podcastList.push(chunk);
-    // })
-    // console.log(response.data);
+    // const response = await axios.get( host + '/api/parsefeed?url=https://atp.fm/rss');
+
+    const post = await axios.post(host + '/api/parsefeed', {
+      url: 'https://atp.fm/rss'
+    })
+    // console.log(post.data);
 
     return {
       props: {
         data: 'some data',
-        podcasts: response.data
+        podcasts: post.data
       }
     }
   } catch (error) {
