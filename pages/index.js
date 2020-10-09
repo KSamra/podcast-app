@@ -3,6 +3,8 @@ import Player from '../components/player';
 // import fetch from 'node-fetch';
 import axios from 'axios';
 import {useState, useEffect} from 'react';
+import {execPipeline} from './api/parsefeedv3';
+
 // import fs from 'fs';
 
 export default function IndexPage({data, podcasts, podcastTitle}) {
@@ -14,9 +16,9 @@ export default function IndexPage({data, podcasts, podcastTitle}) {
     let arr = podcasts.split('\n');
 
     arr.pop()
-    let obj = arr.map(elem => JSON.parse(elem));
-    console.log(obj);
-    setPodcastList(obj);
+    // let obj = arr.map(elem => JSON.parse(elem));
+    // console.log(obj);
+    setPodcastList(arr);
   }, [podcasts, podcastTitle])
   
   return (
@@ -32,7 +34,8 @@ export default function IndexPage({data, podcasts, podcastTitle}) {
         </div>
 
         <ul>
-         {podcastList ? podcastList[0].title : null}
+         {/* {podcastList ? podcastList[0].title : null} */}
+         {podcastList ? podcastList[0] : null}
         </ul>
         
       </div>
@@ -40,28 +43,63 @@ export default function IndexPage({data, podcasts, podcastTitle}) {
   )
 }
 
-export async function getServerSideProps() {
-  const host = 'http://localhost:3000'
-  
-  try {
-    // const response = await axios.get( host + '/api/parsefeed?url=https://atp.fm/rss');
+export async function getServerSideProps(context) {
+  // const host = 'http://localhost:3000'
 
-    const post = await axios.post(host + '/api/parsefeed', {
-      url: 'https://atp.fm/rss'
+  // try {
+  //   // const response = await axios.get( host + '/api/parsefeed?url=https://atp.fm/rss');
+
+  //   const post = await axios.post(host + '/api/parsefeed', {
+  //     url: 'https://atp.fm/rss'
+  //   })
+  //   // console.log(post.data);
+
+  //   return {
+  //     props: {
+  //       data: 'some data',
+  //       podcasts: post.data
+  //     }
+  //   }
+  // } catch (error) {
+  //   console.error(error);
+    
+  //   return {
+  //     props: {data: 'some data'}
+  //   }
+  // }
+
+  try {
+    const data = await execPipeline('https://atp.fm/rss', ['title', 'author', 'date', 'enclosures', 'link', 'origlink', 'episode'])
+
+    // data.on('data', (chunk) => {
+
+    //   console.log(chunk)
+      
+    // })
+
+    data.on('readable', function() {
+      var chunk = null;
+      while (chunk = data.read()) {
+        console.log(chunk);
+      }
     })
-    // console.log(post.data);
 
     return {
       props: {
-        data: 'some data',
-        podcasts: post.data
+          data: 'some data',
+          podcasts: 'Title: ATP\nDesc: nothing much\n w\n'
       }
     }
+      
   } catch (error) {
+    console.log('error in index.js');
     console.error(error);
-    
+
     return {
-      props: {data: 'some data'}
+      props: {
+        data: 'error',
+        podcasts: []
+      }
     }
   }
 }
